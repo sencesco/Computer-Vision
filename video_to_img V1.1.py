@@ -1,16 +1,34 @@
 import cv2
 import os
 from skimage.metrics import structural_similarity as ssim
-import time
 
 SIMILARITY_THRESHOLD = 0.9
-SKIP_FRAMES = 1500  
+SKIP_FRAMES = 1500 
+
+# Resize or processing
+WIDTH_PROCESSING = 893
+HEIGHT_PROCESSING = 500 
 
 # Function to calculate SSIM between two images
 def calculate_ssim(img1, img2):
+    # Resize images if image size very large
+    img1 = cv2.resize(img1, (WIDTH_PROCESSING, HEIGHT_PROCESSING))
+    img2 = cv2.resize(img2, (WIDTH_PROCESSING, HEIGHT_PROCESSING))
+    
+    # Convert to grayscale
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
-    return ssim(gray1, gray2)
+    
+    # Reduce a noise
+    blurred1 = cv2.GaussianBlur(gray1, (5, 5), 0)
+    blurred2 = cv2.GaussianBlur(gray2, (5, 5), 0)
+
+    # Edge detection 
+    edges1 = cv2.Canny(blurred1, 50, 150)
+    edges2 = cv2.Canny(blurred2, 50, 150)
+
+    # Calculate SSIM on the edge-detected images
+    return ssim(edges1, edges2)
 
 # Read the video from the specified path
 cam = cv2.VideoCapture(r"C:\Users\Hp\Downloads\Video\a.mp4")
@@ -32,6 +50,8 @@ prev_frame = None
 
 while True:
     # Reading from frame
+    # ret variable will be True if the frame is read successfully, and False if there are no more frames to read.
+    # frame = image	the video frame is returned here. If no frames has been grabbed the image will be empty.
     ret, frame = cam.read()
 
     if ret:
